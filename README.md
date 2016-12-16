@@ -57,3 +57,13 @@ java -cp .:<path>/<to>/<weka>/weka.jar learnAndClassify
 
 NOTE: the .arff training data file and .arff testing file names are hardcoded and must be changed manually (TODO)
 
+
+
+TODO:
+- the file parser needs to be able to create .arff files from only EEG data tsv files. (without the scores). That way it can score raw EEG data. I think it should be pretty simple to just put "?"s as every class attribute when we don't pass it a score file.
+- learnAndClassify.java needs to be able to write a .csv scores file or smthing whatever serenia can read (I'm not sure)
+- smooth everything over. fs shouldn't be hard coded in eegFileReader.py, neither should the trainingArffFileName and testingArffFileName be hardcoded in learnAndClassify
+- We should be able to extract the epoch lengths in seconds from the .csv score files instead of asking the user to put them in.
+- make a big pipeline (might not be necessary? It's not that complicated as is right now)
+- maybe save the learners once we build them? (this could be a big necessity. Right now it doesn't take long to build them every time but with more data it's only gonna get worse)
+- get more data!
