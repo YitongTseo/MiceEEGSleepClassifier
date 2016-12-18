@@ -38,6 +38,16 @@ class learnAndClassify {
 	    return;
 	}
 
+	boolean save = false; //flag to choose whether or not to save the learned classifer
+	boolean load = false;
+	for (int i=0; i < args.length; i++){
+	    if (args[i].equals("save")){
+		save = true;
+	    }
+	    if (args[i].equals("load")){
+		load = true;
+	    }
+	}
 	
 	trainingData.setClassIndex(trainingData.numAttributes() - 1);
 	testingData.setClassIndex(testingData.numAttributes() - 1);
@@ -51,9 +61,21 @@ class learnAndClassify {
 	//IBk ibk3 = new IBk(); //3 nearest neighbor
 	//IBk ibk5 = new IBk(); //5 nearest neighbor
 
+
+
+	//File strings for writing and reading classifiers.
+	String nbString = "classifiers/NaiveBayes.model";
+	String smo1String = "classifiers/SVMLinearKernel.model";
+	String smo2String = "classifiers/SVMPolyKernel.model";
+	String j48String = "classifiers/DecisionTree.model";
+	String ibk1String = "classifiers/k-Nearest.model";
+
+	/*
 	try {
 	    nb.buildClassifier(trainingData);
-	    weka.core.SerializationHelper.write("classifiers/NaiveBayes.model", nb); //added to save the given classifier
+	    if (save){
+		weka.core.SerializationHelper.write(nbString, nb); //added to save the given classifier
+	    }
 	} catch (Exception e) {
 	    System.out.println("couldn't build naive bayes");
 	    return;
@@ -63,6 +85,9 @@ class learnAndClassify {
 
 	try {
 	    smo1.buildClassifier(trainingData);
+	    if (save) {
+		weka.core.SerializationHelper.write(smo1String, smo1); //added to save the given classifier
+	    }
 	} catch (Exception e) {
 	    System.out.println("couldn't build linear SMO");
 	    return;
@@ -73,6 +98,9 @@ class learnAndClassify {
 	try {
 	    smo2.setOptions(weka.core.Utils.splitOptions("-C 1.0 -L 0.0010 -P 1.0E-12 -N 0 -V -1 -W 1 -K \"weka.classifiers.functions.supportVector.PolyKernel -C 250007 -E 2.0\""));
 	    smo2.buildClassifier(trainingData);
+	    if (save) {
+		weka.core.SerializationHelper.write(smo2String, smo2); //added to save the given classifier
+	    }
 	} catch (Exception e) {
 	    System.out.println("couldn't build second order polynomial SMO");
 	    return;
@@ -82,6 +110,9 @@ class learnAndClassify {
 
 	try {
 	    j48.buildClassifier(trainingData);
+	    if (save) {
+		weka.core.SerializationHelper.write(j48String, j48); //added to save the given classifier
+	    }
 	} catch (Exception e) {
 	    System.out.println("couldn't build decision tree");
 	    return;
@@ -91,6 +122,9 @@ class learnAndClassify {
 
 	try {
 	    ibk1.buildClassifier(trainingData);
+	    if (save) {
+		weka.core.SerializationHelper.write(ibk1String, ibk1); //added to save the given classifier
+	    }
 	} catch (Exception e) {
 	    System.out.println("couldn't build 1 nearest neigbhor");
 	    return;
@@ -130,14 +164,36 @@ class learnAndClassify {
 	
 	int cumulativeNumWrong = 0;
 	int numClassified = 0;
-
-	NaiveBayes deserializedNbClassifier = new NaiveBayes();
-	try {
-	    deserializedNbClassifier = (NaiveBayes) weka.core.SerializationHelper.read("classifiers/NaiveBayes.model");
-	} catch (Exception e){
-	    System.out.println(e.getClass().getName());
-	}
 	
+
+	if (load) {
+	    try {
+		nb = (NaiveBayes) weka.core.SerializationHelper.read(nbString);
+	    } catch (Exception e){
+		System.out.println(e.getClass().getName());
+	    }
+	    try {
+		smo1 = (SMO) weka.core.SerializationHelper.read(smo1String);
+	    } catch (Exception e){
+		System.out.println(e.getClass().getName());
+	    }
+	    try {
+		smo2 = (SMO) weka.core.SerializationHelper.read(smo2String);
+	    } catch (Exception e){
+		System.out.println(e.getClass().getName());
+	    }
+	    try {
+		j48 = (J48) weka.core.SerializationHelper.read(j48String);
+	    } catch (Exception e){
+		System.out.println(e.getClass().getName());
+	    }
+	    try {
+		ibk1 = (IBk) weka.core.SerializationHelper.read(ibk1String);
+	    } catch (Exception e){
+		System.out.println(e.getClass().getName());
+	    }
+	
+	}
 	for (int i = 0; i < testingData.numInstances(); i++){
 	    if (i % 10 == 0) {
 		System.out.println("classifying testcase" + i);
@@ -151,8 +207,7 @@ class learnAndClassify {
 	    try {
 		smo1Pred = smo1.classifyInstance(testingData.instance(i));
 		smo2Pred = smo2.classifyInstance(testingData.instance(i));
-		//nbPred = nb.classifyInstance(testingData.instance(i));
-		nbPred = deserializedNbClassifier.classifyInstance(testingData.instance(i)); //testing deserialization
+		nbPred = nb.classifyInstance(testingData.instance(i));
 		j48Pred = j48.classifyInstance(testingData.instance(i));
 		ibk1Pred = ibk1.classifyInstance(testingData.instance(i));
 
