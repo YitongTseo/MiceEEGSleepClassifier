@@ -5,6 +5,7 @@
 
 import weka.core.Instances;
 import weka.attributeSelection.PrincipalComponents;
+import weka.classifiers.AbstractClassifier;
 import weka.classifiers.functions.SMO;
 import weka.classifiers.trees.J48;
 import weka.classifiers.bayes.NaiveBayes;
@@ -52,6 +53,7 @@ class learnAndClassify {
 
 	try {
 	    nb.buildClassifier(trainingData);
+	    weka.core.SerializationHelper.write("classifiers/NaiveBayes.model", nb); //added to save the given classifier
 	} catch (Exception e) {
 	    System.out.println("couldn't build naive bayes");
 	    return;
@@ -128,6 +130,13 @@ class learnAndClassify {
 	
 	int cumulativeNumWrong = 0;
 	int numClassified = 0;
+
+	NaiveBayes deserializedNbClassifier = new NaiveBayes();
+	try {
+	    deserializedNbClassifier = (NaiveBayes) weka.core.SerializationHelper.read("classifiers/NaiveBayes.model");
+	} catch (Exception e){
+	    System.out.println(e.getClass().getName());
+	}
 	
 	for (int i = 0; i < testingData.numInstances(); i++){
 	    if (i % 10 == 0) {
@@ -137,15 +146,18 @@ class learnAndClassify {
 
 	    double smo1Pred, smo2Pred, nbPred, j48Pred, ibk1Pred, cumulativePred;
 	    double[] predDistribution;
+
+
 	    try {
 		smo1Pred = smo1.classifyInstance(testingData.instance(i));
 		smo2Pred = smo2.classifyInstance(testingData.instance(i));
-		nbPred = nb.classifyInstance(testingData.instance(i));
+		//nbPred = nb.classifyInstance(testingData.instance(i));
+		nbPred = deserializedNbClassifier.classifyInstance(testingData.instance(i)); //testing deserialization
 		j48Pred = j48.classifyInstance(testingData.instance(i));
 		ibk1Pred = ibk1.classifyInstance(testingData.instance(i));
 
 		//this is how to get a predDistribution. right now that's not useful but maybe later?
-		//The reason it's not useful.
+		//The reason it's not useful:
 		//For naive bayes the predDistribution is almost always like [0.99, epsilon, epsilon]
 		//For smo1 and smo2 it's always like [0.333, 0, 0.6666]
 		//predDistribution = smo2.distributionForInstance(testingData.instance(i));
