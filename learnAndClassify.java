@@ -24,6 +24,20 @@ class learnAndClassify {
 	BufferedReader reader;
 	Instances trainingData;
 	Instances testingData;
+
+	boolean save = false; //flag to choose whether or not to save the learned classifer
+	boolean load = false;
+	for (int i=0; i < args.length; i++){
+	    if (args[i].equals("save")){
+		save = true;
+	    }
+	    if (args[i].equals("load")){
+		load = true;
+		if (i < args.length-1){
+		    testingArffFileName = args[i+1]; //the next string after load is the test file
+		}
+	    }
+	}
 	try {
 	    reader = new BufferedReader(new FileReader(trainingArffFileName));
 	    trainingData = new Instances(reader);
@@ -36,17 +50,6 @@ class learnAndClassify {
 	} catch (Exception e) {
 	    System.out.println("check your testing and training filenames, silly goose");
 	    return;
-	}
-
-	boolean save = false; //flag to choose whether or not to save the learned classifer
-	boolean load = false;
-	for (int i=0; i < args.length; i++){
-	    if (args[i].equals("save")){
-		save = true;
-	    }
-	    if (args[i].equals("load")){
-		load = true;
-	    }
 	}
 	
 	trainingData.setClassIndex(trainingData.numAttributes() - 1);
