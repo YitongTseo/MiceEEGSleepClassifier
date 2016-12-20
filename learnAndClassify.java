@@ -294,7 +294,7 @@ class learnAndClassify {
 	if (classifying){
 	    //TODO: Write the file output back to the file
 	    try{
-		FileOutputStream dataOut = new FileOutputStream(testingArffFileName);
+		FileOutputStream dataOut = new FileOutputStream(testingArffFileName.substring(0, testingArffFileName.indexOf(".arff")) + "Classified.arff");
 		dataOut.write(fileWithClassifications.getBytes());
 		dataOut.close();
 	    } catch (Exception e) {
