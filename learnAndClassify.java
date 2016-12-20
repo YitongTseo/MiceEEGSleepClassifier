@@ -13,6 +13,7 @@ import weka.classifiers.lazy.IBk;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.FileOutputStream;
 
 class learnAndClassify {
 
@@ -24,9 +25,13 @@ class learnAndClassify {
 	BufferedReader reader;
 	Instances trainingData;
 	Instances testingData;
-
+	
+	//Flags to save and load a trained classifier, specify whether or not we classify "testing" data.
 	boolean save = false; //flag to choose whether or not to save the learned classifer
 	boolean load = false;
+	boolean classifying = false;
+
+
 	for (int i=0; i < args.length; i++){
 	    if (args[i].equals("save")){
 		save = true;
@@ -36,6 +41,9 @@ class learnAndClassify {
 		if (i < args.length-1){
 		    testingArffFileName = args[i+1]; //the next string after load is the test file
 		}
+	    }
+	    if (args[i].equals("classify")){
+		classifying = true;
 	    }
 	}
 	try {
@@ -197,13 +205,27 @@ class learnAndClassify {
 	    }
 	
 	}
+	
+	String fileWithClassifications = "";
+	String line;
+	if (classifying){
+	    try{
+	    reader = new BufferedReader(new FileReader(testingArffFileName));
+	    while ((line = reader.readLine()) != null) fileWithClassifications += line + "\n";
+	    reader.close();
+	    } catch (Exception e){
+		System.out.println("Problem reading testing file");
+	    }
+	}
+	
 	for (int i = 0; i < testingData.numInstances(); i++){
 	    if (i % 10 == 0) {
 		System.out.println("classifying testcase" + i);
 	    }
 
 
-	    double smo1Pred, smo2Pred, nbPred, j48Pred, ibk1Pred, cumulativePred;
+	    double smo1Pred, smo2Pred, nbPred, j48Pred, ibk1Pred; 
+	    double cumulativePred = -5.0;
 	    double[] predDistribution;
 
 
@@ -233,11 +255,16 @@ class learnAndClassify {
 		cumulativePred = ibk1Pred;
 		numClassified++;
 
-		if (((int) testingData.instance(i).classValue()) != ((int) cumulativePred)) {
+		if (((int) testingData.instance(i).classValue()) != ((int) cumulativePred) && !classifying) {
 		    cumulativeNumWrong++;
 		}
-	    }
 
+	    }
+		
+	    if (classifying){//We modify the file to reflect the classifications.
+		int j = fileWithClassifications.indexOf("?");
+		fileWithClassifications = fileWithClassifications.substring(0, j) + (int)cumulativePred + fileWithClassifications.substring(j+1);//fix this hacked shit
+	    }
 	    //for (int j = 0; j < predDistribution.length; j++) {
 	    //		System.out.println(j + " hey check out this distribution: " + predDistribution[j]);
 	    //}
@@ -245,35 +272,48 @@ class learnAndClassify {
 	    //System.out.print("ID: " + testingData.instance(i).value(0));
 	    //System.out.print(", actual: " + testingData.classAttribute().value((int) testingData.instance(i).classValue()));
 	    //System.out.println(", predicted: " + testingData.classAttribute().value((int) pred));
-
-	    if (((int) testingData.instance(i).classValue()) != ((int) smo1Pred)) {
-		smo1NumWrong++;
-	    }
-	    if (((int) testingData.instance(i).classValue()) != ((int) smo2Pred)) {
-		smo2NumWrong++;
-	    }
-	    if (((int) testingData.instance(i).classValue()) != ((int) nbPred)) {
-		nbNumWrong++;
-	    }
-	    if (((int) testingData.instance(i).classValue()) != ((int) j48Pred)) {
-		j48NumWrong++;
-	    }
-	    if (((int) testingData.instance(i).classValue()) != ((int) ibk1Pred)) {
-		ibk1NumWrong++;
+	    if (!classifying){
+		if (((int) testingData.instance(i).classValue()) != ((int) smo1Pred)) {
+		    smo1NumWrong++;
+		}
+		if (((int) testingData.instance(i).classValue()) != ((int) smo2Pred)) {
+		    smo2NumWrong++;
+		}
+		if (((int) testingData.instance(i).classValue()) != ((int) nbPred)) {
+		    nbNumWrong++;
+		}
+		if (((int) testingData.instance(i).classValue()) != ((int) j48Pred)) {
+		    j48NumWrong++;
+		}
+		if (((int) testingData.instance(i).classValue()) != ((int) ibk1Pred)) {
+		    ibk1NumWrong++;
+		}
 	    }
 	}
-	
-	System.out.println("smo 1 total wrong: " + smo1NumWrong + " which means error rate of: " + (float) smo1NumWrong / (float) testingData.numInstances());
-	System.out.println("smo 2 total wrong: " + smo2NumWrong + " which means error rate of: " + (float) smo2NumWrong / (float) testingData.numInstances());
-	System.out.println("nb total wrong: " + nbNumWrong + " which means error rate of: " + (float) nbNumWrong / (float) testingData.numInstances());
-	System.out.println("j48 total wrong: " + j48NumWrong + " which means error rate of: " + (float) j48NumWrong / (float) testingData.numInstances());
-	System.out.println("ibk1 total wrong: " + ibk1NumWrong + " which means error rate of: " + (float) ibk1NumWrong / (float) testingData.numInstances());
+
+	if (classifying){
+	    //TODO: Write the file output back to the file
+	    try{
+		FileOutputStream dataOut = new FileOutputStream(testingArffFileName);
+		dataOut.write(fileWithClassifications.getBytes());
+		dataOut.close();
+	    } catch (Exception e) {
+		System.out.println("Problem writing back to the file with classifications. If you've gotten here, this should never fail. There could be a problem...");
+	    }
+	}
+
+	if (!classifying){
+	    System.out.println("smo 1 total wrong: " + smo1NumWrong + " which means error rate of: " + (float) smo1NumWrong / (float) testingData.numInstances());
+	    System.out.println("smo 2 total wrong: " + smo2NumWrong + " which means error rate of: " + (float) smo2NumWrong / (float) testingData.numInstances());
+	    System.out.println("nb total wrong: " + nbNumWrong + " which means error rate of: " + (float) nbNumWrong / (float) testingData.numInstances());
+	    System.out.println("j48 total wrong: " + j48NumWrong + " which means error rate of: " + (float) j48NumWrong / (float) testingData.numInstances());
+	    System.out.println("ibk1 total wrong: " + ibk1NumWrong + " which means error rate of: " + (float) ibk1NumWrong / (float) testingData.numInstances());
 
 
-	System.out.println("\n\ncumulative total wrong: " + cumulativeNumWrong + " which means error rate of: " + (float) cumulativeNumWrong / (float) numClassified);
-	System.out.println("Numclassified: " + numClassified + " percent classified: " + (float) numClassified / (float) testingData.numInstances());
+	    System.out.println("\n\ncumulative total wrong: " + cumulativeNumWrong + " which means error rate of: " + (float) cumulativeNumWrong / (float) numClassified);
+	    System.out.println("Numclassified: " + numClassified + " percent classified: " + (float) numClassified / (float) testingData.numInstances());
 
-
+	}
 	//I think this is how we include PCA or not... not super sure.
 	/*
 	PrincipalComponents pca = new PrincipalComponents();
