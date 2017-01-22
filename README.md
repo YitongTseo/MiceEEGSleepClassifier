@@ -8,11 +8,11 @@ Must have:
 - python interpreter
 - weka.jar (code written with weka-3-8-0)
 
-##EXPECTED RAW INPUT FORMATS
+#EXPECTED RAW INPUT FORMATS
 
 the Raw EEG/EMG parser was written to take in output files from the Sirenia software developed by Pinnacle Technology Inc.
 
-#Expects raw EEG/EMG data in the following tsv format:
+###Expects raw EEG/EMG data in the following tsv format:
 
 .
 
@@ -33,7 +33,7 @@ Date	Time	Time Stamp	Time from Start	EEG1	EEG2	EMG	...Further headers/columns of
 .	
 
 
-#Expects scoring data in the following csv format:
+###Expects scoring data in the following csv format:
 
 .
 
@@ -57,10 +57,10 @@ Epoch #,Start Time,End Time,Score #,Score ...Further headers/columns of data wil
 
 .
 
-##HOW TO RUN THE PROGRAM
+#HOW TO RUN THE PROGRAM
 
 
-#To parse *classified* EEG data from (multiple) tsv and csv files and transform into an .arff file:
+###To parse *classified* EEG data from (multiple) tsv and csv files and transform into an .arff file:
 
 python eegFileReader.py [mouse1EEG.tsv] [mouse1Scores.csv] [mouse 1 scoring epoch length in seconds] [mouse2EEG.tsv] [mouse2Scores.csv] [mouse 2 scoring epoch length in seconds]
 
@@ -72,7 +72,7 @@ outputs the combined .arff file as mouseEEG.arff
 
 
 
-#To parse *unclassified* eeg data in a tsv files and transform into an .arff file:
+###To parse *unclassified* eeg data in a tsv files and transform into an .arff file:
 
 python eegFileReader.py [mouseEEG.tsv] unclassified [mouse epoch length in seconds]
 
@@ -84,7 +84,7 @@ outputs the .arff file as mouseEEG.arff
 
 
 
-#To classify mice EEG data:
+###To classify mice EEG data:
 
 javac -cp .:<path>/<to>/<weka>/weka.jar learnAndClassify.java
 
@@ -99,7 +99,7 @@ To clarify, if classify is set to true then the program will assume the epochs i
 if classify is set to false then the program will assume EEGTrainingArffFile contains *ALREADY CLASSIFIED* examples (classes have been manually assigned to each epoch, there are no "?" in the entire arff file). The performance of the trained classifer will be judged off of the EEGTrainingArffFile examples.
 
 
-##TODO:
+#TODO:
 - the file parser needs to be able to create .arff files from only EEG data tsv files. (without the scores). That way it can score raw EEG data. I think it should be pretty simple to just put "?"s as every class attribute when we don't pass it a score file.
 - learnAndClassify.java needs to be able to write a .csv scores file or smthing whatever serenia can read (I'm not sure)
 - smooth everything over. fs shouldn't be hard coded in eegFileReader.py, neither should the trainingArffFileName and testingArffFileName be hardcoded in learnAndClassify
