@@ -346,7 +346,7 @@ def createArffFile(processedData, score_datapoints, attributeNames):
     for i in range(0, numDataPoints):
         name = score_datapoints[i].className.replace(" ", "_")
         #don't bother with unscored epochs
-        if name != "Non_REM" and name != "REM" and name != "Wake":
+        if name != "Non_REM" and name != "REM" and name != "Wake" and name != "?":
             continue
 
         attributeDict = computeInterestingAttributes(processedData[i])
@@ -356,22 +356,26 @@ def createArffFile(processedData, score_datapoints, attributeNames):
 
 
 def parseProcessCreate():
-    attributeNames = setAttributeNames()
+    attributeNames = setAttributeNames()        
 
     eegSamples = int((len(sys.argv) - 1) / 3)
     writeArffHeader(attributeNames)
 
     for i in range(0, eegSamples):
         eegRawDataFileName = str(sys.argv[3 * i + 1])
-        scoresFileName = str(sys.argv[3* i + 2])
+        scoresFileName = str(sys.argv[3 * i + 2])
         epochLengthInSeconds = int(sys.argv[3 * i + 3])
 
         rawData = parseRawData(eegRawDataFileName)
-        score_datapoints = parseClassificationData(scoresFileName)
         processedData = processData(rawData, epochLengthInSeconds)
+        if scoresFileName == "unclassified":
+            epoch = ["11/11/1111 11:11:11","11/11/1111 11:11:11","?"]
+            d = score_datapoint(epoch)
+            score_datapoints = [d] * len(processedData)
+        else:
+            score_datapoints = parseClassificationData(scoresFileName)
         createArffFile(processedData, score_datapoints, attributeNames)
     targetFile.close()
-    
 
 parseProcessCreate()
 

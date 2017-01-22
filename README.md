@@ -12,7 +12,7 @@ Must have:
 
 the Raw EEG/EMG parser was written to take in output files from the Sirenia software developed by Pinnacle Technology Inc.
 
-Expects raw EEG/EMG data in the following tsv format:
+#Expects raw EEG/EMG data in the following tsv format:
 
 .
 
@@ -33,7 +33,7 @@ Date	Time	Time Stamp	Time from Start	EEG1	EEG2	EMG	...Further headers/columns of
 .	
 
 
-Expects scoring data in the following csv format:
+#Expects scoring data in the following csv format:
 
 .
 
@@ -60,21 +60,31 @@ Epoch #,Start Time,End Time,Score #,Score ...Further headers/columns of data wil
 ##HOW TO RUN THE PROGRAM
 
 
-To parse (multiple) tsv and csv files and transform into 1 .arff file run:
+#To parse *classified* EEG data from (multiple) tsv and csv files and transform into an .arff file:
 
 python eegFileReader.py [mouse1EEG.tsv] [mouse1Scores.csv] [mouse 1 scoring epoch length in seconds] [mouse2EEG.tsv] [mouse2Scores.csv] [mouse 2 scoring epoch length in seconds]
 
-... for an arbitrary number of mice
+e.g. python eegFileReader.py m1EEG.txt m1Scores.txt 6 m2EEG.tsv m2Scores.csv 3 m3EEG.txt m3Scores.txt 5
 
-e.g. python eegFileReader.py m1EEG.txt m1Scores.txt 6 m2EEG.txt m2Scores.txt 3 m3EEG.txt m3Scores.txt 5
-
-NOTE: the default sampling frequency (fs) is 400 Hz and must be changed manually in thecode.
+NOTE: the default sampling frequency (fs) is 400 Hz and must be changed manually in the code.
 
 outputs the combined .arff file as mouseEEG.arff
 
 
 
-To classify unknown mice EEG data must run:
+#To parse *unclassified* eeg data in a tsv files and transform into an .arff file:
+
+python eegFileReader.py [mouseEEG.tsv] unclassified [mouse epoch length in seconds]
+
+e.g. python eegFileReader.py m1EEG.tsv unclassified 6
+
+NOTE: the default sampling frequency (fs) is 400 Hz and must be changed manually in the code.
+
+outputs the .arff file as mouseEEG.arff
+
+
+
+#To classify mice EEG data:
 
 javac -cp .:<path>/<to>/<weka>/weka.jar learnAndClassify.java
 
