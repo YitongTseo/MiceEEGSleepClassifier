@@ -1,7 +1,8 @@
 //To run this: First need to download weka-3-8-0 or some other equivalent
 //version of weka and put the folder next to this file in the same directory then run:
 //javac -cp .:weka-3-8-0/weka.jar learnAndClassify.java
-//java -cp .:weka-3-8-0/weka.jar learnAndClassify
+//java -cp .:weka-3-8-0/weka.jar learnAndClassify [trainingArffFileName] <testingArffFileName> <save> <load> <classify>
+//things in square brackets are necessary, things in angle brackets are optional
 
 import weka.core.Instances;
 import weka.attributeSelection.PrincipalComponents;
@@ -10,6 +11,7 @@ import weka.classifiers.functions.SMO;
 import weka.classifiers.trees.J48;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.lazy.IBk;
+import weka.core.SerializationHelper;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -18,34 +20,39 @@ import java.io.FileOutputStream;
 class learnAndClassify {
 
     public static void main(String[] args) {
-	String trainingArffFileName = "mice2And3.arff";	
-	String testingArffFileName = "mouse1EEG.arff";
-	
+	String trainingArffFileName = args[0].trim();
+	String testingArffFileName = "";
+	//Flags to save and load a trained classifier, specify whether or not we classify "testing" data.
+	boolean save = false; //flag to choose whether or not to save the learned classifer
+	boolean load = false; //flag to choose whether or not to load the last saved classifier
+	boolean classifying = false; 
+	//if classifying is set to true: 
+	//     * all instances in the testingArffFile will be classified and the resulting classified arff file will be put in a arff file
+	// else:
+	//     * the performance of the classifier will be judged off of the values in the testingArffFile
+
+
+	//TODO: maybe move this stuff into a argumentSetter() method or smthing
+	if (args.length >= 2 && args[1].contains(".arff")) {
+	    testingArffFileName = args[1].trim();
+	}
+       
+	for (int i=1; i < args.length; i++){
+	    if (args[i].contains("save")){
+		save = true;
+	    }
+	    if (args[i].contains("load")){
+		load = true;
+	    }
+	    if (args[i].contains("classify")){
+		classifying = true;
+	    }
+	}
 
 	BufferedReader reader;
 	Instances trainingData;
 	Instances testingData;
-	
-	//Flags to save and load a trained classifier, specify whether or not we classify "testing" data.
-	boolean save = false; //flag to choose whether or not to save the learned classifer
-	boolean load = false;
-	boolean classifying = false;
 
-
-	for (int i=0; i < args.length; i++){
-	    if (args[i].equals("save")){
-		save = true;
-	    }
-	    if (args[i].equals("load")){
-		load = true;
-		if (i < args.length-1){
-		    testingArffFileName = args[i+1]; //the next string after load is the test file
-		}
-	    }
-	    if (args[i].equals("classify")){
-		classifying = true;
-	    }
-	}
 	try {
 	    reader = new BufferedReader(new FileReader(trainingArffFileName));
 	    trainingData = new Instances(reader);
@@ -54,7 +61,7 @@ class learnAndClassify {
 	    reader = new BufferedReader(new FileReader(testingArffFileName));
 	    testingData = new Instances(reader);
 	    reader.close();
-	    
+
 	} catch (Exception e) {
 	    System.out.println("check your testing and training filenames, silly goose");
 	    return;
@@ -72,8 +79,6 @@ class learnAndClassify {
 	//IBk ibk3 = new IBk(); //3 nearest neighbor
 	//IBk ibk5 = new IBk(); //5 nearest neighbor
 
-
-
 	//File strings for writing and reading classifiers.
 	String nbString = "classifiers/NaiveBayes.model";
 	String smo1String = "classifiers/SVMLinearKernel.model";
@@ -81,68 +86,69 @@ class learnAndClassify {
 	String j48String = "classifiers/DecisionTree.model";
 	String ibk1String = "classifiers/k-Nearest.model";
 
-	/*
-	try {
-	    nb.buildClassifier(trainingData);
-	    if (save){
-		weka.core.SerializationHelper.write(nbString, nb); //added to save the given classifier
+	if (!load) {
+	    try {
+		nb.buildClassifier(trainingData);
+		if (save){
+		    SerializationHelper.write(nbString, nb); //added to save the given classifier
+		}
+	    } catch (Exception e) {
+		System.out.println("couldn't build naive bayes. Exception " + e);
+		return;
 	    }
-	} catch (Exception e) {
-	    System.out.println("couldn't build naive bayes");
-	    return;
-	}
-
-	System.out.println("finished building nb");
-
-	try {
-	    smo1.buildClassifier(trainingData);
-	    if (save) {
-		weka.core.SerializationHelper.write(smo1String, smo1); //added to save the given classifier
+	    
+	    System.out.println("finished building nb");
+	    
+	    try {
+		smo1.buildClassifier(trainingData);
+		if (save) {
+		    SerializationHelper.write(smo1String, smo1); //added to save the given classifier
+		}
+	    } catch (Exception e) {
+		System.out.println("couldn't build linear SMO " + e);
+		return;
 	    }
-	} catch (Exception e) {
-	    System.out.println("couldn't build linear SMO");
-	    return;
-	}
 
-	System.out.println("finished building smo1");
-
-	try {
-	    smo2.setOptions(weka.core.Utils.splitOptions("-C 1.0 -L 0.0010 -P 1.0E-12 -N 0 -V -1 -W 1 -K \"weka.classifiers.functions.supportVector.PolyKernel -C 250007 -E 2.0\""));
-	    smo2.buildClassifier(trainingData);
-	    if (save) {
-		weka.core.SerializationHelper.write(smo2String, smo2); //added to save the given classifier
+	    System.out.println("finished building smo1");
+	    
+	    try {
+		smo2.setOptions(weka.core.Utils.splitOptions("-C 1.0 -L 0.0010 -P 1.0E-12 -N 0 -V -1 -W 1 -K \"weka.classifiers.functions.supportVector.PolyKernel -C 250007 -E 2.0\""));
+		smo2.buildClassifier(trainingData);
+		if (save) {
+		    SerializationHelper.write(smo2String, smo2); //added to save the given classifier
+		}
+	    } catch (Exception e) {
+		System.out.println("couldn't build second order polynomial SMO " + e);
+		return;
 	    }
-	} catch (Exception e) {
-	    System.out.println("couldn't build second order polynomial SMO");
-	    return;
-	}
 
-	System.out.println("finished building smo2");
+	    System.out.println("finished building smo2");
 
-	try {
-	    j48.buildClassifier(trainingData);
-	    if (save) {
-		weka.core.SerializationHelper.write(j48String, j48); //added to save the given classifier
+	    try {
+		j48.buildClassifier(trainingData);
+		if (save) {
+		    weka.core.SerializationHelper.write(j48String, j48); //added to save the given classifier
+		}
+	    } catch (Exception e) {
+		System.out.println("couldn't build decision tree " + e);
+		return;
 	    }
-	} catch (Exception e) {
-	    System.out.println("couldn't build decision tree");
-	    return;
-	}
 
-	System.out.println("finished building j48");
-
-	try {
-	    ibk1.buildClassifier(trainingData);
-	    if (save) {
-		weka.core.SerializationHelper.write(ibk1String, ibk1); //added to save the given classifier
+	    System.out.println("finished building j48");
+	    
+	    try {
+		ibk1.buildClassifier(trainingData);
+		if (save) {
+		    weka.core.SerializationHelper.write(ibk1String, ibk1); //added to save the given classifier
+		}
+	    } catch (Exception e) {
+		System.out.println("couldn't build 1 nearest neighbor " + e);
+		return;
 	    }
-	} catch (Exception e) {
-	    System.out.println("couldn't build 1 nearest neigbhor");
-	    return;
+	    
+	    System.out.println("finished building ibk 1");
+	    
 	}
-
-	System.out.println("finished building ibk 1");
-
 	/*
 	try {
 	    ibk3.buildClassifier(trainingData);
@@ -165,16 +171,6 @@ class learnAndClassify {
 	System.out.println("finished building ibk 5");
 
 	*/
-	int smo1NumWrong = 0;
-	int smo2NumWrong = 0;
-	int nbNumWrong = 0;
-	int j48NumWrong = 0;
-	int ibk1NumWrong = 0;
-	//int ibk3NumWrong = 0;
-	//int ibk5NumWrong = 0;
-	
-	int cumulativeNumWrong = 0;
-	int numClassified = 0;
 	
 
 	if (load) {
@@ -205,22 +201,33 @@ class learnAndClassify {
 	    }
 	
 	}
+
+	int smo1NumWrong = 0;
+	int smo2NumWrong = 0;
+	int nbNumWrong = 0;
+	int j48NumWrong = 0;
+	int ibk1NumWrong = 0;
+	//int ibk3NumWrong = 0;
+	//int ibk5NumWrong = 0;
 	
+	int cumulativeNumWrong = 0;
+	int numClassified = 0;
+
 	String fileWithClassifications = "";
 	String line;
 	if (classifying){
 	    try{
-	    reader = new BufferedReader(new FileReader(testingArffFileName));
-	    while ((line = reader.readLine()) != null) fileWithClassifications += line + "\n";
-	    reader.close();
+		reader = new BufferedReader(new FileReader(testingArffFileName));
+		while ((line = reader.readLine()) != null) fileWithClassifications += line + "\n";
+		reader.close();
 	    } catch (Exception e){
 		System.out.println("Problem reading testing file");
 	    }
 	}
 	
 	for (int i = 0; i < testingData.numInstances(); i++){
-	    if (i % 10 == 0) {
-		System.out.println("classifying testcase" + i);
+	    if (i % 100 == 0) {
+		System.out.println("classifying testcase " + i);
 	    }
 
 
@@ -255,15 +262,14 @@ class learnAndClassify {
 		cumulativePred = ibk1Pred;
 		numClassified++;
 
-		if (((int) testingData.instance(i).classValue()) != ((int) cumulativePred) && !classifying) {
+		if (!classifying && ((int) testingData.instance(i).classValue()) != ((int) cumulativePred)) {
 		    cumulativeNumWrong++;
 		}
-
 	    }
 		
 	    if (classifying){//We modify the file to reflect the classifications.
-		int j = fileWithClassifications.indexOf("?");
-		fileWithClassifications = fileWithClassifications.substring(0, j) + (int)cumulativePred + fileWithClassifications.substring(j+1);//fix this hacked shit
+		int j = fileWithClassifications.indexOf("?"); //ew
+		fileWithClassifications = fileWithClassifications.substring(0, j) + (int)cumulativePred + fileWithClassifications.substring(j+1);//TODO: fix this hacked shit
 	    }
 	    //for (int j = 0; j < predDistribution.length; j++) {
 	    //		System.out.println(j + " hey check out this distribution: " + predDistribution[j]);
