@@ -5,7 +5,7 @@ Yitong Tseo (Yitong.Tseo@williams.edu) and Zander Majercik's (Alexander.Majercik
 Must have:
 - java compiler (javac)
 - java interpreter
-- python interpreter
+- python interpreter (code written with python 2.7)
 - weka.jar (code written with weka-3-8-0)
 
 #EXPECTED RAW INPUT FORMATS
@@ -94,15 +94,15 @@ java -cp .:<path>/<to>/<weka>/weka.jar learnAndClassify [EEGTrainingArffFile] [E
 
 save, load, and classify flag the program to save the classifiers once trained, load the last saved trained classifier, or classify the EEGTrainingArffFile respectively.
 
-To clarify, if classify is set to true then the program will assume the epochs in EEGTrainingArffFile have not been classified (each class will have "?" as its class identifier). All instances in testingArffFile will be classified and the resulting classified arff file will be saved as [EEGTrainingArffFile] +"Classified.arff".
+To clarify, if classify is set to true then the program will assume the epochs in EEGTrainingArffFile have not been classified (each class will have "?" as its class identifier). All instances in testingArffFile will be classified and the resulting classified csv file will be saved as [EEGTrainingArffFile] +"Classified.csv".
 
 if classify is set to false then the program will assume EEGTrainingArffFile contains *ALREADY CLASSIFIED* examples (classes have been manually assigned to each epoch, there are no "?" in the entire arff file). The performance of the trained classifer will be judged off of the EEGTrainingArffFile examples.
 
 
 #TODO:
-- the file parser needs to be able to create .arff files from only EEG data tsv files. (without the scores). That way it can score raw EEG data. I think it should be pretty simple to just put "?"s as every class attribute when we don't pass it a score file.
-- learnAndClassify.java needs to be able to write a .csv scores file or smthing whatever serenia can read (I'm not sure)
-- smooth everything over. fs shouldn't be hard coded in eegFileReader.py, neither should the trainingArffFileName and testingArffFileName be hardcoded in learnAndClassify
+- check if the classified csv file can be read by Serena
+- allow the user to specify what the threshold of agreeing classifiers should be for an example to be classified (currently all classifiers must agree which may result in very few classifications when the user starts feeding a lot of training data in)
+- smooth everything over. fs shouldn't be hard coded in eegFileReader.py, neither should the epochLength, and startingTime be hardcoded in learnAndClassify
 - We should be able to extract the epoch lengths in seconds from the .csv score files instead of asking the user to put them in.
 - make a big pipeline (might not be necessary? It's not that complicated as is right now)
 - get more data!

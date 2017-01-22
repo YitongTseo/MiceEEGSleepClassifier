@@ -16,8 +16,41 @@ import weka.core.SerializationHelper;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 
 class learnAndClassify {
+
+    //veryFirstTime is in format: "10/14/2016 12:59:59"
+    public static String computeTimeString(String veryFirstTime, int secondsSince) {
+	int startingMonth = Integer.parseInt(veryFirstTime.substring(0, veryFirstTime.indexOf("/")));
+	veryFirstTime = veryFirstTime.substring(veryFirstTime.indexOf("/") + 1);
+	int startingDay = Integer.parseInt(veryFirstTime.substring(0, veryFirstTime.indexOf("/")));
+	veryFirstTime = veryFirstTime.substring(veryFirstTime.indexOf("/") + 1);
+	int startingYear = Integer.parseInt(veryFirstTime.substring(0, veryFirstTime.indexOf(" ")));
+	veryFirstTime = veryFirstTime.substring(veryFirstTime.indexOf(" ") + 1);
+	int startingHour = Integer.parseInt(veryFirstTime.substring(0, veryFirstTime.indexOf(":")));
+	veryFirstTime = veryFirstTime.substring(veryFirstTime.indexOf(":") + 1);
+	int startingMin = Integer.parseInt(veryFirstTime.substring(0, veryFirstTime.indexOf(":")));
+	veryFirstTime = veryFirstTime.substring(veryFirstTime.indexOf(":") + 1);
+	int startingSec = Integer.parseInt(veryFirstTime);
+
+	int currentSec = secondsSince + startingSec;
+	int currentMin = startingMin + (int)(currentSec / 60);
+	currentSec %= 60;
+	int currentHour = startingHour + (int)(currentMin / 60);
+	currentMin %= 60;
+	int currentDay = startingDay + (int)(currentHour / 24);
+	currentHour %= 60;
+	int currentMonth = startingMonth + (int)(currentDay / 30); //oh god
+	currentDay %= 24;
+	int currentYear = startingYear + (int)(currentMonth / 365); //oh god
+	currentMonth %= 30;
+
+
+	return String.format("%02d",currentMonth) + "/" + String.format("%02d",currentDay) + "/" + String.format("%02d",currentYear) + " " + String.format("%02d", currentHour) + ":" + String.format("%02d", currentMin) + ":" + String.format("%02d", currentSec);
+    }
+
 
     public static void main(String[] args) {
 	String trainingArffFileName = args[0].trim();
@@ -213,28 +246,26 @@ class learnAndClassify {
 	int cumulativeNumWrong = 0;
 	int numClassified = 0;
 
-	String fileWithClassifications = "";
-	String line;
+	ArrayList<Integer> classifications = new ArrayList<Integer>(); 
+	    /*	ArrayList<String> fileWithClassifications = new ArrayList<String>();
+		String line;
 	if (classifying){
 	    try{
 		reader = new BufferedReader(new FileReader(testingArffFileName));
-		while ((line = reader.readLine()) != null) fileWithClassifications += line + "\n";
+		while ((line = reader.readLine()) != null) fileWithClassifications.add(line + "\n");
 		reader.close();
 	    } catch (Exception e){
 		System.out.println("Problem reading testing file");
 	    }
-	}
+	    }*/
 	
 	for (int i = 0; i < testingData.numInstances(); i++){
-	    if (i % 100 == 0) {
+	    if (i % 50 == 0) {
 		System.out.println("classifying testcase " + i);
 	    }
 
-
 	    double smo1Pred, smo2Pred, nbPred, j48Pred, ibk1Pred; 
-	    double cumulativePred = -5.0;
-	    double[] predDistribution;
-
+	    double cumulativePred = 255.0;
 
 	    try {
 		smo1Pred = smo1.classifyInstance(testingData.instance(i));
@@ -268,16 +299,11 @@ class learnAndClassify {
 	    }
 		
 	    if (classifying){//We modify the file to reflect the classifications.
-		int j = fileWithClassifications.indexOf("?"); //ew
-		fileWithClassifications = fileWithClassifications.substring(0, j) + (int)cumulativePred + fileWithClassifications.substring(j+1);//TODO: fix this hacked shit
+		classifications.add(new Integer((int)cumulativePred));
+		//		int j = fileWithClassifications.indexOf("?"); //ew
+		//		fileWithClassifications = fileWithClassifications.substring(0, j) + (int)cumulativePred + fileWithClassifications.substring(j+1);//TODO: fix this hacked shit
 	    }
-	    //for (int j = 0; j < predDistribution.length; j++) {
-	    //		System.out.println(j + " hey check out this distribution: " + predDistribution[j]);
-	    //}
 
-	    //System.out.print("ID: " + testingData.instance(i).value(0));
-	    //System.out.print(", actual: " + testingData.classAttribute().value((int) testingData.instance(i).classValue()));
-	    //System.out.println(", predicted: " + testingData.classAttribute().value((int) pred));
 	    if (!classifying){
 		if (((int) testingData.instance(i).classValue()) != ((int) smo1Pred)) {
 		    smo1NumWrong++;
@@ -298,11 +324,37 @@ class learnAndClassify {
 	}
 
 	if (classifying){
-	    //TODO: Write the file output back to the file
 	    try{
-		FileOutputStream dataOut = new FileOutputStream(testingArffFileName.substring(0, testingArffFileName.indexOf(".arff")) + "Classified.arff");
-		dataOut.write(fileWithClassifications.getBytes());
-		dataOut.close();
+		//TODO: take the veryFirstTime and epochTimes in as arguments
+		String veryFirstTime = "10/14/2016 12:59:59";
+		final int epochLengthInSeconds = 6;
+
+		PrintWriter writer = new PrintWriter(testingArffFileName.substring(0, testingArffFileName.indexOf(".arff")) + "Classified.csv");
+		writer.println("Epoch #,Start Time,End Time,Score #, Score");
+
+		for (int j = 0; j < classifications.size(); j++) {
+		    String score;
+		    switch (classifications.get(j)) {
+		        case 0: score = "Wake";
+			    break;
+		        case 1: score = "Non REM";
+		    	    break;
+		        case 2: score = "REM";
+			    break;
+		        default: score = "Unscored";
+			    break;
+		    }
+		    
+
+		    String startingTime = computeTimeString(veryFirstTime, j * epochLengthInSeconds);
+		    String endingTime = computeTimeString(veryFirstTime, (j + 1) * epochLengthInSeconds);
+
+		    writer.println((j+1) + "," + startingTime + "," + endingTime + "," +classifications.get(j) + "," + score);
+		}
+
+		writer.close();		
+		//		dataOut.write(fileWithClassifications.getBytes());
+		//dataOut.close();
 	    } catch (Exception e) {
 		System.out.println("Problem writing back to the file with classifications. If you've gotten here, this should never fail. There could be a problem...");
 	    }
@@ -317,9 +369,8 @@ class learnAndClassify {
 
 
 	    System.out.println("\n\ncumulative total wrong: " + cumulativeNumWrong + " which means error rate of: " + (float) cumulativeNumWrong / (float) numClassified);
-	    System.out.println("Numclassified: " + numClassified + " percent classified: " + (float) numClassified / (float) testingData.numInstances());
-
 	}
+	System.out.println("Numclassified: " + numClassified + " percent classified: " + (float) numClassified / (float) testingData.numInstances());
 	//I think this is how we include PCA or not... not super sure.
 	/*
 	PrincipalComponents pca = new PrincipalComponents();
