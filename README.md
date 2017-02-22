@@ -1,6 +1,6 @@
 # MiceEEGSleepClassifier
 
-Yitong Tseo (Yitong.Tseo@williams.edu) and Zander Majercik's (Alexander.Majercik@williams.edu) work to fast fourier transform raw EEG and EMG mice data into usable attributes, train several common Machine learning classifiers on said attributes, and finally classify raw 2 channel EEG and EMG data with a focus towards high precision over accuracy. In collaboration with William Duke and Matt Carter's Williams College biology lab.
+Yitong Tseo (Yitong.Tseo@williams.edu) and Zander Majercik's (asm4@williams.edu) work to fast fourier transform raw EEG and EMG mice data into usable attributes, train several common Machine learning classifiers on said attributes, and finally classify raw 2 channel EEG and EMG data with a focus towards high precision over accuracy. In collaboration with William Duke and Matt Carter's Williams College biology lab.
 
 Must have:
 - java compiler (javac)
